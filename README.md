@@ -7,6 +7,8 @@ the flex plate, any modding on the print head or bed or even changing the Z ends
 position value in the Klipper configuration. Any of these changes or even all of them
 together do **not** affect the first layer at all.
 
+My modification is to rename the deviation variable to max_z_offset and add a min_z_offset variable. During the ~1100 hours I've used this plugin I've had a couple of times where filament ooze interfered with the klicky, resulting in a calculated z offset being 0.3mm lower than it should be, damaging the bed surface. Adding a lower acceptable bound as well as an upper bound should prevent this issue. 
+
 Here is a small video for a short demonstration:
 [https://streamable.com/wclrmc](https://streamable.com/wclrmc)
 
@@ -24,7 +26,9 @@ And, if you love my work and would like to support me, please feel free to do th
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X1C0DTD)
 
 # Changes
-
+- **v0.9.3** (2022-08-03)
+  - Deviation is renamed to max_z_offset and min_z_offset is added
+  - Before saving z offset the value is checked against the max and min offset values set in the .cfg file.
 - **v0.9.2** (2022-07-08)
   - The probe is now docked again before raising an error, if end_gcode is used (thanks to top-gun)
   - Probings are more consistent now as the probing sequence is also applied for the bed probing
