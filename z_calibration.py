@@ -17,7 +17,8 @@ class ZCalibrationHelper:
         self.config = config
         self.printer = config.get_printer()
         self.switch_offset = config.getfloat('switch_offset', 0.0, above=0.)
-        self.max_deviation = config.getfloat('max_deviation', 1.0, above=0.)
+        self.max_z_offset = config.getfloat('max_z_offset', 1.0, above=0.)
+        self.min_z_offset = config.getfloat('min_z_offset', 0.0, above=0.)
         self.speed = config.getfloat('speed', 50.0, above=0.)
         self.clearance = config.getfloat('clearance', None, above=0.)
         self.samples = config.getint('samples', None, minval=1)
@@ -227,7 +228,7 @@ class ZCalibrationHelper:
         # even number of samples
         return self._calc_mean(z_sorted[middle-1:middle+1])
     def _log_config(self):
-        logging.debug("Z-CALIBRATION: switch_offset=%.3f, max_deviation=%.3f,"
+        logging.debug("Z-CALIBRATION: switch_offset=%.3f, max_z_offset=%.3f, min_z_offset=%.3f"
                       " speed=%.3f, samples=%i, tolerance=%.3f, retries=%i,"
                       " samples_result=%s, lift_speed=%.3f, clearance=%.3f,"
                       " probing_speed=%.3f, second_speed=%.3f,"
@@ -235,7 +236,7 @@ class ZCalibrationHelper:
                       " probe_nozzle_x=%.3f, probe_nozzle_y=%.3f,"
                       " probe_switch_x=%.3f, probe_switch_y=%.3f,"
                       " probe_bed_x=%.3f, probe_bed_y=%.3f"
-                      % (self.switch_offset, self.max_deviation, self.speed,
+                      % (self.switch_offset, self.max_z_offset, self.min_z_offset, self.speed,
                          self.samples, self.tolerance, self.retries,
                          self.samples_result, self.lift_speed, self.clearance,
                          self.probing_speed, self.second_speed,
@@ -345,14 +346,22 @@ class CalibrationState:
                                " SWITCH=%.3f PROBE=%.3f --> OFFSET=%.6f"
                                % (self.helper.z_homing, nozzle_zero,
                                   switch_zero, probe_zero, offset))
-        # check max deviation
-        if abs(offset) > self.helper.max_deviation:
+        # check max z_offset
+        if abs(offset) > self.helper.max_z_offset:
             self.helper.end_gcode.run_gcode_from_command()
             raise self.helper.printer.command_error("Offset is larger as"
                                                     " allowed: OFFSET=%.3f"
-                                                    " MAX_DEVIATION=%.3f"
+                                                    " max_z_offset=%.3f"
                                                     % (offset,
-                                                    self.helper.max_deviation))
+                                                    self.helper.max_z_offset))
+
+        if abs(offset) < self.helper.min_z_offset:
+            self.helper.end_gcode.run_gcode_from_command()
+            raise self.helper.printer.command_error("Offset is smaller as"
+                                                    " allowed: OFFSET=%.3f"
+                                                    " min_z_offset=%.3f"
+                                                    % (offset,
+                                                    self.helper.min_z_offset))                                            
         # set new offset
         self._set_new_gcode_offset(offset)
         # set states
